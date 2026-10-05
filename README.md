@@ -8,7 +8,7 @@
 
 # About
 
-This repository contains Jito's fork of the Solana validator.
+This repository contains Jito's fork's fork of the Solana validator that uses upstream agave scheduler bindings for BAM (& maybe more?).
 
 We recommend checking out our [Gitbook](https://jito-foundation.gitbook.io/mev/jito-solana/building-the-software) for
 more detailed instructions on building and running Jito-Solana.
