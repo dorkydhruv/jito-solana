@@ -139,8 +139,19 @@ impl BamDiscovery {
             return Ok(Vec::new());
         }
 
-        let ranked = self.probe_nodes(served_nodes.nodes).await;
+        let unique = Self::unique_nodes(served_nodes.nodes);
+        let ranked = self.probe_nodes(unique).await;
         Ok(ranked)
+    }
+
+    pub fn unique_nodes(mut nodes: Vec<ServedNode>) -> Vec<ServedNode> {
+        nodes.sort_by_key(|node| (node.ip, node.grpc_port));
+        nodes.dedup_by_key(|node| (node.ip, node.grpc_port));
+        nodes
+    }
+
+    pub fn is_usable(node: &RankedNode) -> bool {
+        Duration::from_micros(node.rtt_us) <= MAX_NODE_RTT
     }
 
     async fn probe_nodes(&self, nodes: Vec<ServedNode>) -> Vec<RankedNode> {
@@ -156,7 +167,7 @@ impl BamDiscovery {
             .collect()
             .await;
 
-        let mut valid: Vec<RankedNode> = ranked.into_iter().flatten().collect();
+        let mut valid: Vec<RankedNode> = ranked.into_iter().flatten().filter(Self::is_usable).collect();
         valid.sort_by_key(|n| n.rtt_us);
         valid
     }
@@ -195,36 +206,99 @@ impl BamDiscovery {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_deserialize_served_nodes() {
-        let json = r#"{
-            "generated_at": "2026-10-14T10:00:00Z",
-            "nodes": [
-                {
-                    "ip": "127.0.0.1",
-                    "grpc_port": 10001,
-                    "region": "us-east"
-                },
-                {
-                    "ip": "192.168.1.1",
-                    "grpc_port": 10002,
-                    "region": "eu-central"
-                }
-            ]
-        }"#;
+    const GOLDEN_NODE: &str = r#"{"ip":"203.0.113.1","grpc_port":50056,"region":"fra"}"#;
 
-        let parsed: ServedNodes = serde_json::from_str(json).unwrap();
-        assert_eq!(parsed.nodes.len(), 2);
-        assert_eq!(parsed.nodes[0].url(), "https://127.0.0.1:10001");
-        assert_eq!(parsed.nodes[0].region, "us-east");
-        assert_eq!(parsed.nodes[1].url(), "https://192.168.1.1:10002");
+    fn served_node(ip: &str) -> ServedNode {
+        ServedNode {
+            ip: ip.parse().unwrap(),
+            grpc_port: 50056,
+            region: "fra".to_string(),
+        }
+    }
+
+    fn ranked_node(ip: &str, rtt_us: u64) -> RankedNode {
+        RankedNode {
+            url: format!("https://{ip}:50056"),
+            region: "fra".to_string(),
+            rtt_us,
+        }
     }
 
     #[test]
-    fn test_lenient_rfc3339() {
-        let json = r#"{"nodes": []}"#;
-        let parsed: ServedNodes = serde_json::from_str(json).unwrap();
-        assert!(parsed.generated_at.is_none());
-        assert!(parsed.nodes.is_empty());
+    fn test_deserialize_ignores_unknown_fields() {
+        let json = r#"{"ip":"203.0.113.1","grpc_port":50056,"region":"fra","added_later":true}"#;
+        let node: ServedNode = serde_json::from_str(json).unwrap();
+        assert_eq!(node.grpc_port, 50056);
+    }
+
+    #[test]
+    fn test_deserialize_served_nodes() {
+        let json = format!(r#"{{"generated_at":"2026-09-09T12:34:56Z","nodes":[{GOLDEN_NODE}]}}"#);
+        let served: ServedNodes = serde_json::from_str(&json).unwrap();
+        assert_eq!(
+            served.generated_at,
+            Some("2026-09-09T12:34:56Z".parse::<DateTime<Utc>>().unwrap()),
+        );
+        assert_eq!(served.nodes.len(), 1);
+    }
+
+    #[test]
+    fn test_deserialize_tolerates_bad_generated_at() {
+        for value in [r#""not-a-timestamp""#, "null", "1757419200"] {
+            let json = format!(r#"{{"generated_at":{value},"nodes":[{GOLDEN_NODE}]}}"#);
+            let served: ServedNodes = serde_json::from_str(&json).unwrap();
+            assert_eq!(served.generated_at, None);
+            assert_eq!(served.nodes.len(), 1);
+        }
+    }
+
+    #[test]
+    fn test_deserialize_tolerates_absent_generated_at() {
+        let json = format!(r#"{{"nodes":[{GOLDEN_NODE}]}}"#);
+        let served: ServedNodes = serde_json::from_str(&json).unwrap();
+        assert_eq!(served.generated_at, None);
+    }
+
+    #[test]
+    fn test_deserialize_empty_node_list() {
+        let json = r#"{"generated_at":"2026-09-09T12:34:56Z","nodes":[]}"#;
+        let served: ServedNodes = serde_json::from_str(json).unwrap();
+        assert!(served.nodes.is_empty());
+    }
+
+    #[test]
+    fn test_url_ipv4() {
+        let node: ServedNode = serde_json::from_str(GOLDEN_NODE).unwrap();
+        assert_eq!(node.url(), "https://203.0.113.1:50056");
+    }
+
+    #[test]
+    fn test_unique_nodes_ignores_order() {
+        let a = served_node("203.0.113.1");
+        let b = served_node("203.0.113.2");
+        assert_eq!(
+            BamDiscovery::unique_nodes(vec![b.clone(), a.clone()]),
+            BamDiscovery::unique_nodes(vec![a, b])
+        );
+    }
+
+    #[test]
+    fn test_unique_nodes_drops_duplicate_endpoints() {
+        let a = served_node("203.0.113.1");
+        let b = served_node("203.0.113.2");
+        let relabeled_a = ServedNode {
+            region: "ams".to_string(),
+            ..a.clone()
+        };
+        assert_eq!(
+            BamDiscovery::unique_nodes(vec![a.clone(), b.clone(), relabeled_a, a.clone()]),
+            vec![a, b]
+        );
+    }
+
+    #[test]
+    fn test_is_usable() {
+        assert!(BamDiscovery::is_usable(&ranked_node("203.0.113.1", 30_000)));
+        assert!(!BamDiscovery::is_usable(&ranked_node("203.0.113.1", 30_001)));
     }
 }

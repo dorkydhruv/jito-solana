@@ -188,3 +188,39 @@ impl ChangeBlockBuilderInstruction {
         Ok(data)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_tip_payment_pda_derivations() {
+        let program_id = Pubkey::new_unique();
+        let (config_pda, _config_bump) = JitoTipPaymentConfig::find_program_address(&program_id);
+
+        let pdas = JitoTipPaymentConfig::find_tip_payment_account_pdas(&program_id);
+        assert_eq!(pdas.len(), 8);
+
+        // Ensure all 8 tip accounts are distinct
+        let mut unique_accs: Vec<Pubkey> = pdas.iter().map(|(pk, _)| *pk).collect();
+        unique_accs.sort();
+        unique_accs.dedup();
+        assert_eq!(unique_accs.len(), 8);
+        assert!(!unique_accs.contains(&config_pda));
+    }
+
+    #[test]
+    fn test_tip_payment_instruction_discriminators() {
+        let change_receiver_data = ChangeTipReceiverInstruction::to_instruction_data();
+        assert_eq!(
+            &change_receiver_data[0..8],
+            ChangeTipReceiverInstruction::DISCRIMINATOR
+        );
+
+        let change_builder_data = ChangeBlockBuilderInstruction::to_instruction_data(500).unwrap();
+        assert_eq!(
+            &change_builder_data[0..8],
+            ChangeBlockBuilderInstruction::DISCRIMINATOR
+        );
+    }
+}

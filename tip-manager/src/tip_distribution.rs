@@ -174,3 +174,37 @@ impl JitoTipDistributionConfig {
         self.bump
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_tip_distribution_pda_derivation() {
+        let program_id = Pubkey::new_unique();
+        let vote_pubkey = Pubkey::new_unique();
+        let (pda1, _bump1) = TipDistributionAccount::find_program_address(&program_id, &vote_pubkey, 100);
+        let (pda2, _bump2) = TipDistributionAccount::find_program_address(&program_id, &vote_pubkey, 101);
+        assert_ne!(pda1, pda2);
+
+        let (config_pda, _config_bump) = JitoTipDistributionConfig::find_program_address(&program_id);
+        assert_ne!(config_pda, pda1);
+    }
+
+    #[test]
+    fn test_instruction_data_discriminators() {
+        let auth = Pubkey::new_unique();
+        let expired = Pubkey::new_unique();
+        let data = InitializeTipDistributionConfigInstruction::to_instruction_data(
+            auth, expired, 3, 1000, 254,
+        )
+        .unwrap();
+        assert_eq!(&data[0..8], InitializeTipDistributionConfigInstruction::DISCRIMINATOR);
+
+        let account_data = InitializeTipDistributionAccountInstruction::to_instruction_data(
+            auth, 100, 253,
+        )
+        .unwrap();
+        assert_eq!(&account_data[0..8], InitializeTipDistributionAccountInstruction::DISCRIMINATOR);
+    }
+}

@@ -155,7 +155,7 @@ impl BamClient {
         };
 
         // 2. Sign Challenge
-        let msg_to_sign = [AUTH_LABEL, challenge.as_bytes()].concat();
+        let msg_to_sign = Self::labeled_bytes(challenge.as_bytes());
         let sig = identity.sign_message(&msg_to_sign);
         let auth_proof = AuthProof {
             challenge_to_sign: challenge,
@@ -296,5 +296,35 @@ impl BamClient {
                 }
             }
         }
+    }
+
+    /// Construct labeled bytes that must be signed for BAM authentication
+    pub fn labeled_bytes(challenge: &[u8]) -> Vec<u8> {
+        let mut v = Vec::with_capacity(AUTH_LABEL.len() + challenge.len());
+        v.extend_from_slice(AUTH_LABEL);
+        v.extend_from_slice(challenge);
+        v
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_labeled_bytes_format() {
+        let challenge = b"test-challenge-12345";
+        let labeled = BamClient::labeled_bytes(challenge);
+        assert!(labeled.starts_with(AUTH_LABEL));
+        assert_eq!(&labeled[AUTH_LABEL.len()..], challenge);
+    }
+
+    #[test]
+    fn test_auth_proof_signing_and_verification() {
+        let keypair = Keypair::new();
+        let challenge = "test-challenge-12345";
+        let msg_to_sign = BamClient::labeled_bytes(challenge.as_bytes());
+        let sig = keypair.sign_message(&msg_to_sign);
+        assert!(sig.verify(&keypair.pubkey().to_bytes(), &msg_to_sign));
     }
 }
