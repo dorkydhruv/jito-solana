@@ -24,7 +24,9 @@ if [[ -n $USE_INSTALL || ! -f "$SOLANA_ROOT"/Cargo.toml ]]; then
     if [[ -z $program ]]; then
       printf "solana"
     else
-      if [[ $program == "validator" || $program == "ledger-tool" || $program == "watchtower" || $program == "install" ]]; then
+      if [[ $program == "jito-builder" ]]; then
+        printf "%s" "$program"
+      elif [[ $program == "validator" || $program == "ledger-tool" || $program == "watchtower" || $program == "install" ]]; then
         printf "agave-%s" "$program"
       else
         printf "solana-%s" "$program"
@@ -42,6 +44,8 @@ else
     if [[ -z $program ]]; then
       crate="cli"
       program="solana"
+    elif [[ $program == "jito-builder" ]]; then
+      program="jito-builder"
     elif [[ $program == "validator" || $program == "ledger-tool" || $program == "watchtower" || $program == "install" ]]; then
       program="agave-$program"
     else
@@ -68,6 +72,7 @@ fi
 solana_transaction_bench=${SOLANA_TRANSACTION_BENCH:-solana-transaction-bench}
 solana_faucet=$(solana_program faucet)
 agave_validator=$(solana_program validator)
+jito_builder=$(solana_program jito-builder)
 solana_genesis=$(solana_program genesis)
 solana_gossip=$(solana_program gossip)
 solana_keygen=$(solana_program keygen)

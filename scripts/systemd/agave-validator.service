@@ -1,0 +1,29 @@
+[Unit]
+Description=Agave Validator with Native Scheduler Bindings
+After=network.target
+Wants=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=solana
+Group=solana
+LimitNOFILE=1000000
+LimitMEMLOCK=infinity
+LimitCORE=infinity
+TasksMax=infinity
+Nice=-20
+Restart=on-failure
+RestartSec=5
+EnvironmentFile=-/etc/default/solana-validator
+ExecStart=/home/solana/.local/share/solana/install/active_release/bin/agave-validator \
+    --ledger /home/solana/ledger \
+    --identity /home/solana/validator-keypair.json \
+    --vote-account /home/solana/vote-account-keypair.json \
+    --enable-scheduler-bindings \
+    $EXTRA_VALIDATOR_ARGS
+ExecStop=/bin/kill -s INT $MAINPID
+TimeoutStopSec=60
+
+[Install]
+WantedBy=multi-user.target

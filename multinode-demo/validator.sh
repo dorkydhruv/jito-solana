@@ -22,6 +22,9 @@ stake_account=
 no_restart=0
 gossip_entrypoint=
 ledger_dir=
+enable_jito_builder=0
+jito_builder_args=()
+builder_pid=
 
 usage() {
   if [[ -n $1 ]]; then
@@ -46,6 +49,10 @@ OPTIONS:
   --rpc-port port           - custom RPC port for this node
   --no-restart              - do not restart the node if it exits
   --no-airdrop              - The genesis config has an account for the node. Airdrops are not required.
+  --enable-jito-builder     - run jito-builder alongside validator using scheduler-bindings
+  --jito-builder-bam-url URL - direct BAM node endpoint for jito-builder
+  --jito-builder-registry-url URL - dynamic discovery registry for jito-builder
+  --jito-builder-commission-bps BPS - commission BPS for jito-builder
 
 EOF
   exit 1
@@ -214,6 +221,19 @@ while [[ -n $1 ]]; do
     elif [[ $1 == --enable-scheduler-bindings ]]; then
       args+=("$1")
       shift
+    elif [[ $1 == --enable-jito-builder ]]; then
+      enable_jito_builder=1
+      args+=(--enable-scheduler-bindings)
+      shift
+    elif [[ $1 == --jito-builder-bam-url ]]; then
+      jito_builder_args+=(--bam-url "$2")
+      shift 2
+    elif [[ $1 == --jito-builder-registry-url ]]; then
+      jito_builder_args+=(--bam-node-registry-url "$2")
+      shift 2
+    elif [[ $1 == --jito-builder-commission-bps ]]; then
+      jito_builder_args+=(--commission-bps "$2")
+      shift 2
     elif [[ $1 == --transaction-structure ]]; then
       args+=("$1" "$2")
       shift 2
@@ -333,6 +353,12 @@ kill_node() {
   # Note: do not echo anything from this function to ensure $pid is actually
   # killed when stdout/stderr are redirected
   set +ex
+  if [[ -n $builder_pid ]]; then
+    declare _bpid=$builder_pid
+    builder_pid=
+    kill "$_bpid" || true
+    wait "$_bpid" || true
+  fi
   if [[ -n $pid ]]; then
     declare _pid=$pid
     pid=
@@ -423,8 +449,34 @@ while true; do
   pid=$!
   echo "pid: $pid"
 
+  if ((enable_jito_builder)); then
+    echo "Waiting for validator scheduler IPC and admin RPC sockets in $ledger_dir..."
+    ipc_sock="$ledger_dir/scheduler_bindings.ipc"
+    admin_sock="$ledger_dir/admin.rpc"
+    for _ in {1..30}; do
+      if [[ -S "$ipc_sock" && -S "$admin_sock" ]]; then
+        break
+      fi
+      if ! kill -0 "$pid" 2>/dev/null; then
+        echo "Validator process died before sockets became available"
+        break
+      fi
+      sleep 1
+    done
+
+    if [[ -S "$ipc_sock" && -S "$admin_sock" ]]; then
+      echo "Launching jito-builder..."
+      $jito_builder --ledger "$ledger_dir" "${jito_builder_args[@]}" &
+      builder_pid=$!
+      echo "jito-builder pid: $builder_pid"
+    else
+      echo "Warning: scheduler sockets not detected; jito-builder not started"
+    fi
+  fi
+
   if ((no_restart)); then
     wait "$pid"
+    kill_node
     exit $?
   fi
 

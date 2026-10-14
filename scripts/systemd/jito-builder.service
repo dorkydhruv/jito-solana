@@ -1,0 +1,24 @@
+[Unit]
+Description=Jito BAM Block Builder & Scheduler Daemon
+BindsTo=agave-validator.service
+After=agave-validator.service
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=solana
+Group=solana
+LimitNOFILE=1000000
+Restart=always
+RestartSec=5
+EnvironmentFile=-/etc/default/jito-builder
+ExecStart=/home/solana/.local/share/solana/install/active_release/bin/jito-builder \
+    --ledger /home/solana/ledger \
+    --bam-node-registry-url https://bam.jito.network/nodes.json \
+    --commission-bps 800 \
+    $EXTRA_BUILDER_ARGS
+ExecStop=/bin/kill -s INT $MAINPID
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target

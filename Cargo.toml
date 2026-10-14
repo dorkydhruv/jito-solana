@@ -168,6 +168,7 @@ end-user = [
 val-op = [
     "agave-validator",
     "agave-watchtower",
+    "jito-builder",
     "solana-gossip",
     "solana-genesis",
     "solana-faucet",
