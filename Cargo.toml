@@ -45,6 +45,7 @@ members = [
     "install",
     "io-uring",
     "jemalloc",
+    "jito-builder",
     "jito-protos",
     "jito-tip-router-snapshot-service",
     "keygen",
@@ -81,6 +82,7 @@ members = [
     "random",
     "rayon-threadlimit",
     "rbpf-cli",
+    "rdtsc",
     "remote-wallet",
     "reserved-account-keys",
     "rpc",
@@ -110,6 +112,7 @@ members = [
     "syscalls/gen-syscall-list",
     "test-validator",
     "tls-utils",
+    "tip-manager",
     "tokens",
     "tpu-client",
     "tpu-client-next",
@@ -310,6 +313,7 @@ itertools = "0.15.0"
 jemalloc-ctl = { package = "tikv-jemalloc-ctl", version = "0.6.0", features = ["stats"] }
 jemalloc-sys = { package = "tikv-jemalloc-sys", version = "0.6.0" }
 jemallocator = { package = "tikv-jemallocator", version = "0.6.0", features = ["unprefixed_malloc_on_supported_platforms", "stats"] }
+jito-builder = { path = "jito-builder", version = "=4.5.0-alpha.1" }
 jito-protos = { path = "jito-protos", version = "=4.5.0-alpha.1" }
 jito-tip-router-snapshot-service = { path = "jito-tip-router-snapshot-service", version = "=4.5.0-alpha.1" }
 json5 = "1.3.1"
@@ -358,6 +362,7 @@ rand = "0.9.4"
 rand_chacha = "0.9.0"
 rayon = "1.12.0"
 rcgen = "0.14.8"
+rdtsc = { path = "rdtsc", version = "=4.5.0-alpha.1" }
 reed-solomon-erasure = "6.0.0"
 regex = "1.13.1"
 reqwest = { version = "0.12.28", default-features = false }
@@ -593,6 +598,7 @@ tarpc = "0.38.0"
 tempfile = "3.27.0"
 test-case = "3.4.0"
 thiserror = "2.0.21"
+tip-manager = { path = "tip-manager", version = "=4.5.0-alpha.1" }
 tokio = "1.53.1"
 tokio-serde = "0.9.0"
 tokio-stream = "0.1.19"

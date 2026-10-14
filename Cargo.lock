@@ -4202,6 +4202,53 @@ dependencies = [
 ]
 
 [[package]]
+name = "jito-builder"
+version = "4.5.0-alpha.1"
+dependencies = [
+ "agave-logger",
+ "agave-scheduler-bindings",
+ "agave-scheduler-handshake",
+ "agave-scheduling-utils",
+ "anyhow",
+ "arc-swap",
+ "bincode",
+ "bytes",
+ "chrono",
+ "clap 4.5.31",
+ "crossbeam-channel",
+ "futures 0.3.34",
+ "indexmap 2.14.2",
+ "jito-protos",
+ "jsonrpc-core",
+ "jsonrpc-core-client",
+ "log",
+ "prost 0.14.4",
+ "prost-types 0.14.4",
+ "rand 0.9.4",
+ "rdtsc",
+ "reqwest 0.12.28",
+ "rts-alloc",
+ "rustc-hash",
+ "serde",
+ "serde_json",
+ "shaq",
+ "smallvec",
+ "solana-clock 4.0.0",
+ "solana-hash",
+ "solana-instruction 4.0.0",
+ "solana-keypair",
+ "solana-pubkey 4.4.0",
+ "solana-signer",
+ "solana-transaction",
+ "spl-memo-interface",
+ "thiserror 2.0.21",
+ "tip-manager",
+ "tokio",
+ "tokio-stream",
+ "tonic",
+]
+
+[[package]]
 name = "jito-priority-fee-distribution-sdk"
 version = "0.0.1"
 source = "git+https://github.com/jito-foundation/jito-tip-router.git?rev=d3e10e9ca650197a78b01f64c492b1cd91eea7f4#d3e10e9ca650197a78b01f64c492b1cd91eea7f4"
@@ -6224,6 +6271,10 @@ dependencies = [
  "x509-parser",
  "yasna",
 ]
+
+[[package]]
+name = "rdtsc"
+version = "4.5.0-alpha.1"
 
 [[package]]
 name = "redox_syscall"
@@ -13020,6 +13071,25 @@ name = "tinyvec_macros"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cda74da7e1a664f795bb1f8a87ec406fb89a02522cf6e50620d016add6dbbf5c"
+
+[[package]]
+name = "tip-manager"
+version = "4.5.0-alpha.1"
+dependencies = [
+ "bincode",
+ "borsh",
+ "log",
+ "smallvec",
+ "solana-clock 4.0.0",
+ "solana-hash",
+ "solana-instruction 4.0.0",
+ "solana-keypair",
+ "solana-pubkey 4.4.0",
+ "solana-sdk-ids",
+ "solana-signer",
+ "solana-transaction",
+ "thiserror 2.0.21",
+]
 
 [[package]]
 name = "tokio"
