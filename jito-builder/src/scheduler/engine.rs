@@ -1,8 +1,9 @@
 //! Core scheduler engine driving Agave block production and BAM batch execution
 
+pub use crate::bam::client::OutboundMsg;
+
 use {
     crate::{
-        bam::client::OutboundMsg,
         config::Config,
         scheduler::{
             progress::ProgressTracker,

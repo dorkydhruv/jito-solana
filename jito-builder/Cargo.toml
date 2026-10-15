@@ -42,6 +42,7 @@ solana-hash = { workspace = true }
 solana-instruction = { workspace = true }
 solana-keypair = { workspace = true }
 solana-pubkey = { workspace = true, features = ["std", "curve25519", "sha2"] }
+solana-signature = { workspace = true, features = ["verify"] }
 solana-signer = { workspace = true }
 solana-transaction = { workspace = true }
 spl-memo-interface = { workspace = true }
@@ -50,6 +51,10 @@ tip-manager = { workspace = true }
 tokio = { workspace = true, features = ["rt-multi-thread", "macros", "time", "sync", "signal"] }
 tokio-stream = { workspace = true }
 tonic = { workspace = true, features = ["channel", "tls-webpki-roots"] }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+tonic = { workspace = true, features = ["channel", "router", "server"] }
 
 [lints]
 workspace = true

@@ -1,18 +1,12 @@
-//! Main entrypoint for jito-builder daemon
-
-mod admin_rpc;
-mod bam;
-mod config;
-mod scheduler;
-
 use {
-    crate::{
+    clap::Parser,
+    crossbeam_channel::unbounded,
+    jito_builder::{
+        admin_rpc,
         bam::{client::BamClient, discovery::BamDiscovery},
         config::Config,
         scheduler::{engine::SchedulerEngine, ipc::connect as ipc_connect, progress::ProgressTracker},
     },
-    clap::Parser,
-    crossbeam_channel::unbounded,
     log::{info, trace},
     std::{sync::Arc, time::Duration},
     tokio::{
