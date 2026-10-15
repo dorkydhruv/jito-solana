@@ -92,7 +92,7 @@ urlencode() {
   done
 }
 
-SOLANA_CONFIG_DIR=$SOLANA_ROOT/config
+SOLANA_CONFIG_DIR=${SOLANA_CONFIG_DIR:-$SOLANA_ROOT/config}
 # Clear the current cluster configuration
 clear_config_dir() {
   declare config_dir="$1"

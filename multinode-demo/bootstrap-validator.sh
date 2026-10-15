@@ -8,6 +8,8 @@ here=$(dirname "$0")
 # shellcheck source=multinode-demo/common.sh
 source "$here"/common.sh
 
+prlimit --pid $$ --nofile=1000000:1000000 2>/dev/null || sudo prlimit --pid $$ --nofile=1000000:1000000 2>/dev/null || true
+
 program=$agave_validator
 
 no_restart=0
